@@ -2,7 +2,7 @@ import disnake
 from disnake.ext import commands
 from dotenv import dotenv_values
 
-import shittychess.py as chess
+import shitty_chessgamelogic.py as chess
 
 
 config = dotenv_values(".env")
