@@ -1,9 +1,12 @@
-token = 'OTY2Mjk3MDAxMTU3MzQxMjI0.Yl_sNg.lFahTN1dpsZcmAj4sB4PkTfkwqM'
-
 import disnake
 from disnake.ext import commands
+from dotenv import dotenv_values
 
 import shittychess.py as chess
+
+
+config = dotenv_values(".env")
+token = config["token"]
 
 
 bot = commands.Bot(
