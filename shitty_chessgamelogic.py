@@ -1,6 +1,7 @@
-import numpy as np
 import re
 import copy
+
+import numpy as np
 
 class InvalidMove(Exception):
     pass
@@ -46,16 +47,16 @@ class Piece:
     def rotation90(point, center = np.array([0,0])):
         return (point - center)[::-1] * (-1, 1) + center
 
-    def merrygoround(self, board, shift):
+    def merrygoround(self, board, shift, attacker = False):
         point = np.array(self.pos) + shift
         for i in range(4):
             point = Piece.rotation90(point, np.array(self.pos))
-            if Piece.is_inside(point) and (board[tuple(point)] is None or board[tuple(point)].color != self.color):
+            if Piece.is_inside(point) and (board[tuple(point)] is None or attacker or board[tuple(point)].color != self.color):
                 self.moves.append(tuple(point))
                 if board[tuple(point)] is not None and board[tuple(point)].type == 'K':
                     board[tuple(point)].incheck.append(self.pos)
 
-    def straightline(self, board, increment):
+    def straightline(self, board, increment, attacker = False):
         for i in range(4):
             increment = Piece.rotation90(increment)
             point = np.array(self.pos) + increment
@@ -66,6 +67,8 @@ class Piece:
                     self.moves.append(tuple(point))
                     block.append(tuple(point))
                 elif cur.color == self.color:
+                    if attacker:
+                        self.moves.append(tuple(point))
                     break
 
                 elif cur.color != self.color:
@@ -104,6 +107,8 @@ class Piece:
         if attacked_set is None:
             attacked_set = set()
 
+        attacker = king is None
+
         if self.type == 'P':
 
             forward = tuple(np.array(self.pos) + (self.color, 0))
@@ -115,20 +120,18 @@ class Piece:
                 if (self.pos[0] * self.color) % 7 == 1 and board[forward2] is None:
                     self.moves.append(forward2)
 
-            attacker = king is None
-
             self.diag1(board, tuple(np.array(self.pos) + (0, -1)), tuple(np.array(self.pos) + (self.color, -1)), attacker)
             self.diag1(board, tuple(np.array(self.pos) + (0, 1)), tuple(np.array(self.pos) + (self.color, 1)), attacker)
 
 
         elif self.type == 'N':
-            self.merrygoround(board, (2, 1))
-            self.merrygoround(board, (2, -1))
+            self.merrygoround(board, (2, 1), attacker)
+            self.merrygoround(board, (2, -1), attacker)
 
 
         elif self.type == 'K':
-            self.merrygoround(board, (1, 0))
-            self.merrygoround(board, (1, 1))
+            self.merrygoround(board, (1, 0), attacker)
+            self.merrygoround(board, (1, 1), attacker)
 
             backrank = {1: 0, -1: 7}[self.color]
 
@@ -139,11 +142,11 @@ class Piece:
             self.moves = list(set(self.moves) - attacked_set)
 
         if self.type in {'R', 'Q'}:
-            self.straightline(board, (1, 0))
+            self.straightline(board, (1, 0), attacker)
 
 
         if self.type in {'B', 'Q'}:
-            self.straightline(board, (1, 1))
+            self.straightline(board, (1, 1), attacker)
 
         if self.pinned != set():
             self.moves = list(self.pinned.intersection(set(self.moves)))
@@ -241,7 +244,7 @@ class Game:
         king = self.pieces[current][1, 4]
         for piece in self.pieces[current].flatten():
             if piece is not None:
-                piece.legal_moves(self.board, set(game.moves[opponent]), king)
+                piece.legal_moves(self.board, set(self.moves[opponent]), king)
                 self.moves[current] += piece.moves
 
 
@@ -255,7 +258,7 @@ class Game:
                 self.game_status = 'Stalemate'
             else:
                 dico = {1: 'White', -1: 'Black'}
-                self.game_status = dico[-king.color] + ' Win'
+                self.game_status = dico[-king.color] + ' Wins'
 
     def threefoldrepetition(self):
         self.allpositions.append(copy.deepcopy(self.pieces))
@@ -390,15 +393,17 @@ class Game:
             self.checkgamestatus()
             if self.game_status != '':
                 break
-
-            try:
-                self.playturn(input('What is your move ? \n'))
-            except InvalidMove:
-                print('Invalid Move')
-            except AmbiguousMove:
-                print('Ambiguous Move')
-            except ParseError:
-                print('Failed to parse Move')
+            while True:
+                try:
+                    self.playturn(input('What is your move ? \n'))
+                except InvalidMove:
+                    print('Invalid Move')
+                except AmbiguousMove:
+                    print('Ambiguous Move')
+                except ParseError:
+                    print('Failed to parse Move')
+                else:
+                    break
 
     def pgnreplay(self, pgn):
         pgn = pgn.replace('+', '').replace('?', '').replace('!', '').replace('\n', ' ').replace('-', '').replace('OOO','O-O-O').replace('OO','O-O')

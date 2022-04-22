@@ -1,13 +1,95 @@
+import os
+import asyncio
+
 import disnake
 from disnake.ext import commands
 from dotenv import dotenv_values
 
-import shitty_chessgamelogic.py as chess
-
+import shitty_chessgamelogic as chess
 
 config = dotenv_values(".env")
-token = config["token"]
 
+token = config['token']
+
+async def playOverwrite(self, lobby):
+
+    await lobby.send("> Welcome to this new game of chess, you have **10** minutes to make **a** move or you lose.\nGLHF all !")
+    hello = await lobby.send("Use this thread to navigate to previous moves")
+    await hello.pin()
+
+    thread = await lobby.create_thread(name = "You can click the moves to go see its board state.\n", message=hello)
+
+    white = disnake.utils.get(lobby.guild.roles, name="chessbot team white")
+    black = disnake.utils.get(lobby.guild.roles, name="chessbot team black")
+
+    roles = [white, black]
+
+    def createcheck(role):
+        return lambda message: message.channel == lobby and role in message.author.roles
+
+    dict = {1 : "**White**", -1 : "**Black**"}
+
+    while True:
+
+        if self.history:
+            lastmove = ' *' + self.history[-1] + '*'
+
+        else:
+            lastmove = 'None'
+
+        payload = disnake.Embed(title = dict[self.turn] + " to play.", description = "Last move:" + lastmove)
+        payload.add_field(name = "Current boardstate:", value = str(self).replace('♟', '\\♟').replace('.', '   .   ') )
+
+        # dict[self.turn] + " to play. Last move:" + lastmove + '\n\n\n' + str(self).replace('♟', '\\♟').replace('.', '   .   ')
+
+        board_msg = await lobby.send(embed = payload)
+
+        if self.history:
+            lastmove = self.history[-1]
+            button = disnake.ui.Button(label = lastmove, url = board_msg.jump_url)
+            if self.turn == -1:
+                view = disnake.ui.View(timeout = None)
+                view.add_item(button)
+                thread_msg = await thread.send(content = str(len(self.history)//2) + '. ', view = view )
+            else:
+                view.add_item(button)
+                await thread_msg.edit(content = str(len(self.history)//2) + '. ', view = view )
+        else:
+            button = disnake.ui.Button(label = "Game Start", url = board_msg.jump_url)
+            view = disnake.ui.View(timeout = None)
+            view.add_item(button)
+            thread_msg = await thread.send(content = str(len(self.history)//2) + '. ', view = view )
+
+        self.checkgamestatus()
+
+        if self.game_status != '':
+            break
+
+        while True:
+            try:
+                move = await bot.wait_for('message', timeout=600.0, check = createcheck(roles[(self.turn-1)//2]))
+                print(move.content)
+
+            except asyncio.TimeoutError:
+                self.game_status = '> ' + dict[self.turn] + " `lost` on time."
+            else:
+
+                try:
+                    self.playturn(move.content)
+
+                except chess.InvalidMove:
+                    await lobby.send('Invalid Move (can be my fault)')
+                except chess.AmbiguousMove:
+                    await lobby.send('Ambiguous Move')
+                except chess.ParseError:
+                    await lobby.send('Failed to parse Move')
+                else:
+                    break
+
+
+    await lobby.send('\n*' + self.game_status + '*')
+
+chess.Game.play = playOverwrite
 
 bot = commands.Bot(
     command_prefix=commands.when_mentioned,
@@ -123,7 +205,7 @@ class Dropdown(disnake.ui.Select):
         # The min and max values indicate we can only pick one of the three options
         # The options parameter defines the dropdown options. We defined this above
         super().__init__(
-            placeholder="Click me",
+            placeholder="Click on me to choose a team",
             min_values=1,
             max_values=1,
             options=options,
@@ -179,6 +261,8 @@ async def playchess(ctx: disnake.ApplicationCommandInteraction):
 
     await chooseside(ctx)
 
-    game = Game()
+    game = chess.Game()
+
+    await game.play(lobby)
 
 bot.run(token)
