@@ -87,7 +87,7 @@ async def playOverwrite(self, lobby):
                     break
 
 
-    await lobby.send('\n*' + self.game_status + '*')
+    await lobby.send('> **' + self.game_status + '**')
 
 chess.Game.play = playOverwrite
 
