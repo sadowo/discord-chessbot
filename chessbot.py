@@ -242,7 +242,7 @@ class DropdownView(disnake.ui.View):
         self.add_item(Dropdown())
 
 
-
+global game_isrunning
 game_isrunnng = []
         
 async def chooseside(ctx):
