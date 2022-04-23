@@ -75,7 +75,10 @@ async def playOverwrite(self, lobby):
             else:
 
                 try:
-                    self.playturn(move.content)
+                    if move.content == 'resign':
+                        self.game_status = dict[self.turn] + ' resigns.'
+                    else:
+                        self.playturn(move.content)
 
                 except chess.InvalidMove:
                     await lobby.send('Invalid Move (can be my fault)')
@@ -240,6 +243,8 @@ class DropdownView(disnake.ui.View):
 
 
 
+global game_isrunnng = False
+        
 async def chooseside(ctx):
     """Sends a message with our dropdown containing colours"""
     url = disnake.utils.get(ctx.guild.channels, name='chessbot-lobby').jump_url
@@ -258,11 +263,16 @@ async def playchess(ctx: disnake.ApplicationCommandInteraction):
     if lobby is None:
         await ctx.response.send_message("Whoops, seems like I was not setup properly...\nTry '@chessbot setmeupforthefirsttime' for the setup\nand '@chessbot cleanupforthelasttime' to delete everything", ephemeral=True)
         return
+    
+    if game_isrunning:
+        await ctx.response.send_message("A game is still in progress !", ephemeral=True)
+        return
 
+    game_isrunnng = True
+    
     await chooseside(ctx)
-
     game = chess.Game()
-
     await game.play(lobby)
-
+    
+    game is running = False
 bot.run(token)
