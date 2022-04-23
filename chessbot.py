@@ -79,6 +79,7 @@ async def playOverwrite(self, lobby):
                         self.game_status = dict[self.turn] + ' resigns.'
                     else:
                         self.playturn(move.content)
+                        break
 
                 except chess.InvalidMove:
                     await lobby.send('Invalid Move (can be my fault)')
@@ -105,7 +106,7 @@ bot = commands.Bot(
 @bot.event
 async def on_ready():
     print("Bot is ready")
-    print(f"Logged in as {self.user} (ID: {self.user.id})")
+    print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print("------")
 
 def create_overwrites(ctx, *objects):
