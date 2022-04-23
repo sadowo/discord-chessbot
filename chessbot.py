@@ -243,7 +243,7 @@ class DropdownView(disnake.ui.View):
 
 
 
-global game_isrunnng = []
+game_isrunnng = []
         
 async def chooseside(ctx):
     """Sends a message with our dropdown containing colours"""
