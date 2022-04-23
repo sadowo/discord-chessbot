@@ -276,6 +276,6 @@ async def playchess(ctx: disnake.ApplicationCommandInteraction):
     game = chess.Game()
     await game.play(lobby)
     
-    game_isrunning.append(ctx.guild)
+    game_isrunning.remove(ctx.guild)
     
 bot.run(token)
