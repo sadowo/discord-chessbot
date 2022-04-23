@@ -105,6 +105,8 @@ bot = commands.Bot(
 @bot.event
 async def on_ready():
     print("Bot is ready")
+    print(f"Logged in as {self.user} (ID: {self.user.id})")
+    print("------")
 
 def create_overwrites(ctx, *objects):
     """This is just a helper function that creates the overwrites for the
