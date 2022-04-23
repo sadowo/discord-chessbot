@@ -242,7 +242,7 @@ class DropdownView(disnake.ui.View):
         self.add_item(Dropdown())
 
 
-global game_isrunning
+
 game_isrunning = []
         
 async def chooseside(ctx):
@@ -259,6 +259,8 @@ async def chooseside(ctx):
 
 @bot.slash_command()
 async def playchess(ctx: disnake.ApplicationCommandInteraction):
+    global game_isrunning
+    
     lobby = disnake.utils.get(ctx.guild.channels, name='chessbot-lobby')
     if lobby is None:
         await ctx.response.send_message("Whoops, seems like I was not setup properly...\nTry '@chessbot setmeupforthefirsttime' for the setup\nand '@chessbot cleanupforthelasttime' to delete everything", ephemeral=True)
