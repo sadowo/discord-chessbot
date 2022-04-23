@@ -243,7 +243,7 @@ class DropdownView(disnake.ui.View):
 
 
 global game_isrunning
-game_isrunnng = []
+game_isrunning = []
         
 async def chooseside(ctx):
     """Sends a message with our dropdown containing colours"""
@@ -268,7 +268,7 @@ async def playchess(ctx: disnake.ApplicationCommandInteraction):
         await ctx.response.send_message("A game is still in progress !", ephemeral=True)
         return
 
-    game_isrunnng.append(ctx.guild)
+    game_isrunning.append(ctx.guild)
     
     await chooseside(ctx)
     game = chess.Game()
